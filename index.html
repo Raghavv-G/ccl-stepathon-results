@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CCL Stepathon — Results Day</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.2/confetti.browser.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+  :root{
+    --ink:#0E2A26;
+    --panel:#143832;
+    --panel-light:#1B463F;
+    --gold:#F2B134;
+    --coral:#FF6B4A;
+    --cream:#F4F1E6;
+    --sage:#8FB3A8;
+    --silver:#C9D6D2;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; }
+  body{
+    font-family:'Manrope', sans-serif;
+    background:radial-gradient(circle at 20% 0%, #173E38 0%, var(--ink) 55%);
+    color:var(--cream);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .deck{ position:relative; width:100%; height:100vh; }
+
+  .slide{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    padding:7vh 7vw 12vh;
+    text-align:center;
+    opacity:0; pointer-events:none;
+    transform:translateY(24px);
+    transition:opacity .55s ease, transform .55s ease;
+  }
+  .slide.active{ opacity:1; pointer-events:auto; transform:translateY(0); }
+
+  .eyebrow{
+    letter-spacing:.22em; text-transform:uppercase;
+    font-size:12.5px; font-weight:700; color:var(--sage);
+    margin-bottom:18px;
+  }
+  .eyebrow b{ color:var(--gold); }
+
+  h1.display{
+    font-family:'Anton', sans-serif;
+    font-weight:400;
+    letter-spacing:.01em;
+    line-text-transform:uppercase;
+    text-transform:uppercase;
+    line-height:1.02;
+    margin:0 0 14px;
+  }
+
+  /* ---------- Slide 0 : Title ---------- */
+  #s0 h1.display{ font-size:clamp(40px,7vw,92px); }
+  #s0 .sub{ font-size:18px; color:var(--silver); max-width:560px; margin-top:6px; }
+  .pulse-cta{
+    margin-top:54px; font-size:13px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--gold); font-weight:700;
+    animation:pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{opacity:.5} 50%{opacity:1} }
+
+  /* ---------- Quiz slides ---------- */
+  .quiz-q{
+    font-size:clamp(22px,3.4vw,34px); font-weight:700; max-width:760px; line-height:1.3;
+    margin-bottom:40px;
+  }
+  .options{
+    display:grid; grid-template-columns:1fr 1fr; gap:16px;
+    width:min(680px,86vw);
+  }
+  .opt{
+    background:var(--panel); border:2px solid var(--panel-light);
+    color:var(--cream); font-family:'Manrope'; font-weight:700; font-size:17px;
+    padding:20px 14px; border-radius:14px; cursor:pointer;
+    transition:transform .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .opt:hover{ border-color:var(--gold); transform:translateY(-3px); }
+  .opt.correct{ background:var(--gold); color:var(--ink); border-color:var(--gold); }
+  .opt.wrong{ opacity:.35; }
+  .opt:disabled{ cursor:default; }
+
+  .reveal-box{
+    margin-top:40px; opacity:0; transform:translateY(14px);
+    transition:opacity .5s ease, transform .5s ease;
+  }
+  .reveal-box.show{ opacity:1; transform:translateY(0); }
+  .reveal-num{
+    font-family:'Anton'; color:var(--gold); font-size:clamp(48px,8vw,96px);
+    line-height:1;
+  }
+  .reveal-label{ font-size:15px; color:var(--silver); margin-top:6px; max-width:560px; }
+
+  .continue-btn{
+    margin-top:30px; background:none; border:2px solid var(--coral); color:var(--coral);
+    font-weight:700; font-size:13px; letter-spacing:.1em; text-transform:uppercase;
+    padding:13px 30px; border-radius:30px; cursor:pointer; opacity:0; transition:opacity .4s ease, background .2s ease, color .2s ease;
+  }
+  .continue-btn.show{ opacity:1; pointer-events:auto; }
+  .continue-btn:hover{ background:var(--coral); color:var(--ink); }
+
+  /* ---------- Fun factoid cards ---------- */
+  .fact-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:18px;
+    width:min(900px,90vw); margin-bottom:18px;
+  }
+  .fact-card{
+    background:var(--panel); border:1px solid var(--panel-light); border-radius:18px;
+    padding:26px 20px;
+  }
+  .fact-num{ font-family:'Anton'; font-size:clamp(34px,5vw,52px); color:var(--coral); line-height:1; margin-bottom:10px; }
+  .fact-card p{ font-size:14.5px; color:var(--cream); line-height:1.5; margin:0; }
+  @media (max-width:760px){
+    .fact-grid{ grid-template-columns:1fr; }
+  }
+
+  /* ---------- Suspense ---------- */
+  #sSuspense h1.display{ font-size:clamp(34px,6vw,72px); }
+  .silhouettes{ display:flex; gap:40px; margin-top:26px; }
+  .sil{ width:64px; height:64px; border-radius:50%; background:var(--panel-light);
+    filter:blur(1px); opacity:.5; animation:bob 2.4s ease-in-out infinite; }
+  .sil:nth-child(2){ animation-delay:.3s; }
+  .sil:nth-child(3){ animation-delay:.6s; }
+  @keyframes bob{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+
+  /* ---------- Podium slides ---------- */
+  .podium-tag{ font-size:13px; letter-spacing:.18em; text-transform:uppercase; font-weight:800; margin-bottom:10px; }
+  .runner .podium-tag{ color:var(--silver); }
+  .winner .podium-tag{ color:var(--gold); }
+
+  .team-name{
+    font-family:'Anton'; text-transform:uppercase;
+    font-size:clamp(46px,9vw,120px); line-height:1;
+    margin:4px 0 18px;
+  }
+  .runner .team-name{ color:var(--silver); }
+  .winner .team-name{
+    color:var(--gold);
+    text-shadow:0 0 36px rgba(242,177,52,.45);
+  }
+
+  .strydes-count{ font-size:20px; color:var(--cream); font-weight:700; margin-bottom:22px; }
+  .strydes-count span{ color:var(--coral); }
+
+  .roster{
+    display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:560px;
+  }
+  .roster span{
+    background:var(--panel); border:1px solid var(--panel-light); border-radius:30px;
+    padding:8px 16px; font-size:13.5px; font-weight:600; color:var(--silver);
+  }
+
+  /* ---------- Closing ---------- */
+  #sEnd h1.display{ font-size:clamp(32px,5.6vw,62px); }
+  .end-foot{ margin-top:30px; font-size:13px; color:var(--sage); letter-spacing:.06em; }
+
+  /* ---------- Footstep progress ---------- */
+  .progress{
+    position:absolute; bottom:30px; left:0; right:0;
+    display:flex; justify-content:center; gap:10px; align-items:center;
+  }
+  .step-dot{
+    width:9px; height:9px; border-radius:50%; background:var(--panel-light);
+    transition:background .25s ease, transform .25s ease;
+  }
+  .step-dot.passed{ background:var(--sage); }
+  .step-dot.current{ background:var(--gold); transform:scale(1.5); }
+
+  /* ---------- Nav arrows ---------- */
+  .nav-btn{
+    position:absolute; top:50%; transform:translateY(-50%);
+    width:46px; height:46px; border-radius:50%;
+    background:rgba(255,255,255,.06); border:1px solid var(--panel-light);
+    color:var(--cream); font-size:20px; cursor:pointer; z-index:20;
+    display:flex; align-items:center; justify-content:center;
+    transition:background .2s ease;
+  }
+  .nav-btn:hover{ background:rgba(255,255,255,.15); }
+  #prevBtn{ left:18px; } #nextBtn{ right:18px; }
+
+  .keyhint{
+    position:absolute; top:24px; right:28px; font-size:11.5px; color:var(--sage);
+    letter-spacing:.06em; text-transform:uppercase;
+  }
+
+  /* confetti canvas sits above everything */
+  #confettiCanvas{ position:fixed; inset:0; pointer-events:none; z-index:50; }
+
+  @media (max-width:640px){
+    .options{ grid-template-columns:1fr; }
+    .nav-btn{ width:38px; height:38px; font-size:16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- 0 Title -->
+  <section class="slide active" id="s0">
+    <div class="eyebrow">CCL × SOWAKA · <b>STEPATHON RESULTS DAY</b></div>
+    <h1 class="display">Every Step<br>Counted</h1>
+    <p class="sub">Over the past stepathon, Center for Creative Leadership walked further than anyone expected. Today, we find out exactly how far, and who led the charge.</p>
+    <div class="pulse-cta">Click anywhere or press → to begin</div>
+  </section>
+
+  <!-- 1 Quiz: total steps -->
+  <section class="slide" id="s1">
+    <div class="eyebrow">GUESS THE NUMBER · 01</div>
+    <div class="quiz-q">How many total steps did CCL's 6 squads walk together?</div>
+    <div class="options" data-answer="1,470,498">
+      <button class="opt">800,000</button>
+      <button class="opt">1,150,000</button>
+      <button class="opt">1,470,498</button>
+      <button class="opt">1,900,000</button>
+    </div>
+    <div class="reveal-box">
+      <div class="reveal-num" data-target="1470498">0</div>
+      <div class="reveal-label">total strydes logged across the team, the equivalent of every single member walking nonstop for days.</div>
+    </div>
+    <button class="continue-btn">Next stat →</button>
+  </section>
+
+  <!-- 2 Quiz: distance -->
+  <section class="slide" id="s2">
+    <div class="eyebrow">GUESS THE NUMBER · 02</div>
+    <div class="quiz-q">How much ground did that cover, in kilometres?</div>
+    <div class="options" data-answer="1,176">
+      <button class="opt">610 km</button>
+      <button class="opt">920 km</button>
+      <button class="opt">1,176 km</button>
+      <button class="opt">1,560 km</button>
+    </div>
+    <div class="reveal-box">
+      <div class="reveal-num" data-target="1176" data-suffix=" km">0</div>
+      <div class="reveal-label">that's like driving from Delhi to Jaipur and back, twice over, with kilometres still to spare.</div>
+    </div>
+    <button class="continue-btn">Next stat →</button>
+  </section>
+
+  <!-- 3 Quiz: participants -->
+  <section class="slide" id="s3">
+    <div class="eyebrow">GUESS THE NUMBER · 03</div>
+    <div class="quiz-q">How many CCL teammates signed up and showed up for this?</div>
+    <div class="options" data-answer="31">
+      <button class="opt">22</button>
+      <button class="opt">27</button>
+      <button class="opt">31</button>
+      <button class="opt">38</button>
+    </div>
+    <div class="reveal-box">
+      <div class="reveal-num" data-target="31">0</div>
+      <div class="reveal-label">participants, spread across 6 squads, all stepping up for the challenge.</div>
+    </div>
+    <button class="continue-btn">Next stat →</button>
+  </section>
+
+  <!-- 4 Quiz: avg steps -->
+  <section class="slide" id="s4">
+    <div class="eyebrow">GUESS THE NUMBER · 04</div>
+    <div class="quiz-q">On average, how many strydes did each participant rack up?</div>
+    <div class="options" data-answer="47,435">
+      <button class="opt">20,000</button>
+      <button class="opt">34,000</button>
+      <button class="opt">47,435</button>
+      <button class="opt">62,000</button>
+    </div>
+    <div class="reveal-box">
+      <div class="reveal-num" data-target="47435">0</div>
+      <div class="reveal-label">strydes per person on average. Some teammates walked far past this, and that's exactly who we're about to celebrate.</div>
+    </div>
+    <button class="continue-btn">Who's the top individual? →</button>
+  </section>
+
+  <!-- 4b Quiz: top individual -->
+  <section class="slide" id="s4b">
+    <div class="eyebrow">GUESS THE PERSON · 05</div>
+    <div class="quiz-q">Before the team results, one person out-walked all 31 participants individually. Who was it?</div>
+    <div class="options" data-answer="Manisha Kasana">
+      <button class="opt">Manisha Kasana</button>
+      <button class="opt">Apurva Bhardwaj</button>
+      <button class="opt">Parth Puri</button>
+      <button class="opt">Sumit Kumar</button>
+    </div>
+    <div class="reveal-box" style="max-width:600px;">
+      <div class="reveal-label" style="font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); font-weight:800; margin-bottom:6px;">Individual topper</div>
+      <h1 class="display" style="font-size:clamp(34px,6vw,58px); color:var(--cream); margin-bottom:6px;">Manisha Kasana</h1>
+      <div class="reveal-num" data-target="148544" style="font-size:clamp(34px,5.5vw,56px);">0</div>
+      <div class="reveal-label">strydes on her own, Milemakers squad. It was close though, Apurva Bhardwaj of Mavericks trailed by just 7,248 strydes, the tightest individual race of the stepathon.</div>
+    </div>
+    <button class="continue-btn">A few more fun numbers →</button>
+  </section>
+
+  <!-- 5 Milestone / fun factoids -->
+  <section class="slide" id="s5">
+    <div class="eyebrow">FUN FACTOIDS</div>
+    <h1 class="display" style="font-size:clamp(26px,4.2vw,42px); margin-bottom:28px;">Put another way...</h1>
+    <div class="fact-grid">
+      <div class="fact-card">
+        <div class="fact-num">28</div>
+        <p>full marathons, that's what the team's total distance adds up to if you lined it up end to end. Nobody had to lace up running shoes.</p>
+      </div>
+      <div class="fact-card">
+        <div class="fact-num" style="font-size:clamp(22px,3vw,32px);">Delhi → Mumbai</div>
+        <p>that's the straight-line distance CCL's total stepathon steps add up to, roughly the same as the gap between India's capital and its financial capital, covered one way.</p>
+      </div>
+      <div class="fact-card">
+        <div class="fact-num">5</div>
+        <p>teammates kept a perfect day-on-day streak the entire stretch, not missing a single day. Call them the Iron Streak Club.</p>
+      </div>
+    </div>
+    <button class="continue-btn show">Let's get to the winners →</button>
+  </section>
+
+  <!-- 6 Suspense -->
+  <section class="slide" id="sSuspense">
+    <div class="eyebrow">THE LEADERBOARD HAS BEEN HIDDEN UNTIL NOW</div>
+    <h1 class="display">It's Time To<br>Crown A<br>Champion</h1>
+    <div class="silhouettes">
+      <div class="sil"></div><div class="sil"></div><div class="sil"></div>
+    </div>
+    <button class="continue-btn show" style="margin-top:46px;">Reveal the winner →</button>
+  </section>
+
+  <!-- 7 Winner -->
+  <section class="slide winner" id="sWinner">
+    <div class="podium-tag">🥇 Stepathon Champions</div>
+    <div class="team-name">Milemakers</div>
+    <div class="strydes-count"><span class="reveal-num-inline" data-target="395627">0</span> strydes as a team</div>
+    <div class="roster">
+      <span>Manisha Kasana</span><span>Kavya Suri</span><span>Kunal Thakur</span>
+      <span>Kushali Verma</span><span>Pragati Verma</span>
+    </div>
+  </section>
+
+  <!-- 7b Surprise twist -->
+  <section class="slide" id="sSurprise">
+    <div class="eyebrow">HOLD ON</div>
+    <h1 class="display">Before We Go...<br>One More Squad<br>Earned The Spotlight</h1>
+    <div class="silhouettes">
+      <div class="sil"></div><div class="sil"></div>
+    </div>
+    <button class="continue-btn show" style="margin-top:46px;">Reveal the runner-up →</button>
+  </section>
+
+  <!-- 8 Runner up -->
+  <section class="slide runner" id="sRunner">
+    <div class="podium-tag">🥈 Surprise runner-up</div>
+    <div class="team-name">Mavericks</div>
+    <div class="strydes-count"><span class="reveal-num-inline" data-target="283909">0</span> strydes as a team</div>
+    <div class="roster">
+      <span>Apurva Bhardwaj</span><span>Sunil Kumar Gupta</span><span>Sumit Kumar</span>
+      <span>Iltefat Ahmad Alhaque Jami</span><span>Parth Narang</span>
+    </div>
+    <button class="continue-btn show" style="margin-top:38px;">Close it out →</button>
+  </section>
+
+  <!-- 9 Closing -->
+  <section class="slide" id="sEnd">
+    <div class="eyebrow">THANK YOU, CCL</div>
+    <h1 class="display">1.47 Million Steps.<br>One Strong Team.</h1>
+    <p class="sub">Congratulations to every participant who showed up, day after day. See you at the next stepathon.</p>
+    <div class="end-foot">Powered by Sowaka · getsowaka.com</div>
+  </section>
+
+  <div class="nav-btn" id="prevBtn">‹</div>
+  <div class="nav-btn" id="nextBtn">›</div>
+  <div class="keyhint">← → to navigate</div>
+  <div class="progress" id="progress"></div>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let current = 0;
+
+  // build progress dots
+  const progressEl = document.getElementById('progress');
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'step-dot';
+    progressEl.appendChild(d);
+  });
+
+  function updateProgress(){
+    const dots = progressEl.children;
+    for(let i=0;i<dots.length;i++){
+      dots[i].classList.remove('current','passed');
+      if(i < current) dots[i].classList.add('passed');
+      if(i === current) dots[i].classList.add('current');
+    }
+  }
+
+  function goTo(idx){
+    if(idx < 0 || idx >= slides.length) return;
+    slides[current].classList.remove('active');
+    current = idx;
+    slides[current].classList.add('active');
+    updateProgress();
+    if(slides[current].id === 'sWinner') fireConfetti();
+  }
+
+  function next(){ goTo(current+1); }
+  function prev(){ goTo(current-1); }
+
+  document.getElementById('nextBtn').addEventListener('click', next);
+  document.getElementById('prevBtn').addEventListener('click', prev);
+
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'ArrowRight' || e.key === ' ') next();
+    if(e.key === 'ArrowLeft') prev();
+  });
+
+  // click on title slide background advances
+  document.getElementById('s0').addEventListener('click', next);
+
+  // count-up animation
+  function countUp(el, target, suffix){
+    const duration = 1100;
+    const start = performance.now();
+    function frame(now){
+      const p = Math.min(1, (now-start)/duration);
+      const eased = 1 - Math.pow(1-p, 3);
+      const val = Math.floor(eased * target);
+      el.textContent = val.toLocaleString('en-IN') + (suffix||'');
+      if(p < 1) requestAnimationFrame(frame);
+      else el.textContent = target.toLocaleString('en-IN') + (suffix||'');
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // quiz logic
+  document.querySelectorAll('.options').forEach(group => {
+    const answer = group.getAttribute('data-answer');
+    const slide = group.closest('.slide');
+    const revealBox = slide.querySelector('.reveal-box');
+    const continueBtn = slide.querySelector('.continue-btn');
+    const numEl = revealBox ? revealBox.querySelector('.reveal-num') : null;
+
+    group.querySelectorAll('.opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if(group.dataset.locked) return;
+        group.dataset.locked = '1';
+        const isCorrect = btn.textContent.trim() === answer || btn.textContent.trim() === (answer+' km');
+        group.querySelectorAll('.opt').forEach(b => {
+          b.disabled = true;
+          if(b.textContent.trim() === answer || b.textContent.trim() === (answer+' km')){
+            b.classList.add('correct');
+          } else {
+            b.classList.add('wrong');
+          }
+        });
+        setTimeout(() => {
+          revealBox.classList.add('show');
+          if(numEl){
+            const target = parseInt(numEl.getAttribute('data-target'), 10);
+            const suffix = numEl.getAttribute('data-suffix') || '';
+            countUp(numEl, target, suffix);
+          }
+          continueBtn.classList.add('show');
+        }, 450);
+      });
+    });
+  });
+
+  // podium inline counters trigger when slide becomes active
+  const podiumObserver = new MutationObserver(muts => {
+    muts.forEach(m => {
+      const el = m.target;
+      if(el.classList.contains('active')){
+        const counter = el.querySelector('.reveal-num-inline');
+        if(counter && !counter.dataset.done){
+          counter.dataset.done = '1';
+          countUp(counter, parseInt(counter.getAttribute('data-target'),10), '');
+        }
+      }
+    });
+  });
+  document.querySelectorAll('#sRunner, #sWinner').forEach(el => {
+    podiumObserver.observe(el, { attributes:true, attributeFilter:['class'] });
+  });
+
+  function fireConfetti(){
+    if(typeof confetti !== 'function') return;
+    const colors = ['#F2B134','#FF6B4A','#F4F1E6'];
+    confetti({ particleCount:140, spread:80, origin:{y:.6}, colors });
+    setTimeout(() => confetti({ particleCount:100, spread:120, origin:{y:.4}, colors }), 300);
+    setTimeout(() => confetti({ particleCount:80, spread:100, origin:{y:.5}, colors }), 600);
+  }
+
+  // wire up generic continue buttons that aren't inside quiz options handling already (milestone/suspense/podium)
+  document.querySelectorAll('.continue-btn.show').forEach(btn => {
+    if(!btn.dataset.wired){
+      btn.dataset.wired = '1';
+      btn.addEventListener('click', next);
+    }
+  });
+  document.querySelectorAll('.continue-btn').forEach(btn => {
+    btn.addEventListener('click', next);
+  });
+
+  updateProgress();
+</script>
+</body>
+</html>
