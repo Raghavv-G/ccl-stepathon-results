@@ -40,8 +40,19 @@
     opacity:0; pointer-events:none;
     transform:translateY(24px);
     transition:opacity .55s ease, transform .55s ease;
+    overflow-y:auto;
   }
   .slide.active{ opacity:1; pointer-events:auto; transform:translateY(0); }
+
+  /* Quiz and result slides carry the most stacked content (question, 4 options,
+     reveal block). Anchoring them to the top instead of centering means if a
+     short viewport can't fit everything, only the bottom (continue button)
+     gets pushed below the fold and is reachable by scrolling, never the
+     question itself. */
+  #s1, #s2, #s3, #s4, #s4b, #s5{
+    justify-content:flex-start;
+    padding-top:8vh;
+  }
 
   .eyebrow{
     letter-spacing:.22em; text-transform:uppercase;
@@ -285,20 +296,20 @@
   <!-- 4b Quiz: top individual -->
   <section class="slide" id="s4b">
     <div class="eyebrow">GUESS THE PERSON · 05</div>
-    <div class="quiz-q">Before the team results, one person out-walked all 31 participants individually. Who was it?</div>
+    <div class="quiz-q" style="margin-bottom:28px;">Before the team results, one person out-walked all 31 participants individually. Who was it?</div>
     <div class="options" data-answer="Manisha Kasana">
       <button class="opt">Manisha Kasana</button>
       <button class="opt">Apurva Bhardwaj</button>
       <button class="opt">Parth Puri</button>
       <button class="opt">Sumit Kumar</button>
     </div>
-    <div class="reveal-box" style="max-width:600px;">
-      <div class="reveal-label" style="font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); font-weight:800; margin-bottom:6px;">Individual topper</div>
-      <h1 class="display" style="font-size:clamp(34px,6vw,58px); color:var(--cream); margin-bottom:6px;">Manisha Kasana</h1>
-      <div class="reveal-num" data-target="148544" style="font-size:clamp(34px,5.5vw,56px);">0</div>
-      <div class="reveal-label">strydes on her own, Milemakers squad. It was close though, Apurva Bhardwaj of Mavericks trailed by just 7,248 strydes, the tightest individual race of the stepathon.</div>
+    <div class="reveal-box" style="max-width:600px; margin-top:24px;">
+      <div class="reveal-label" style="font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); font-weight:800; margin-bottom:4px;">Individual topper</div>
+      <h1 class="display" style="font-size:clamp(28px,5vw,46px); color:var(--cream); margin-bottom:4px;">Manisha Kasana</h1>
+      <div class="reveal-num" data-target="148544" style="font-size:clamp(28px,4.5vw,44px);">0</div>
+      <div class="reveal-label" style="margin-top:6px;">strydes on her own, Milemakers squad. It was close though, Apurva Bhardwaj of Mavericks trailed by just 7,248 strydes, the tightest individual race of the stepathon.</div>
     </div>
-    <button class="continue-btn">A few more fun numbers →</button>
+    <button class="continue-btn" style="margin-top:20px;">A few more fun numbers →</button>
   </section>
 
   <!-- 5 Milestone / fun factoids -->
